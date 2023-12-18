@@ -4,7 +4,6 @@ import argparse
 import paramiko
 from getpass import getpass
 from grep import Grep
-from bucket_tracker import BuckeTracker
 import sys
 
 
@@ -71,7 +70,6 @@ if __name__ == "__main__":
 
     print(stdout.read().decode(), end="")
     userIn = input()
-    bkt = BuckeTracker(client)
     grep = Grep()
 
     while "quit" not in userIn:
@@ -84,18 +82,18 @@ if __name__ == "__main__":
             userIn = split[0].strip()
             grepCommand = split[1].strip()
 
-        if "config" in userIn:
-            bkt.storeBucketLevel(userIn[0:-1])
-            print(bkt.bkt)
-            stdin, stdout, stderr = client.exec_command(userIn)
-        elif len(userIn) and (userIn in "show" or userIn in "get"):
-            stdin, stdout, stderr = bkt.show_or_get(userIn)
-        else:
-            stdin, stdout, stderr = client.exec_command(userIn)
-            if stderr:
-                print(stderr.read().decode(), end="")
+        stdin, stdout, stderr = client.exec_command(userIn)
+        if stderr:
+            print(stderr.read().decode(), end="")
         
         ## if grep flag set, instead of print, grep and returned filtered output 
+        if grepCommand:
+            output = stdout.read().decode()
+            filtered = grep.run(grepCommand, output)
+            st_filtered = "\n".join(filtered)
+            prompt = output[-2:]
+            print(f'{st_filtered} {prompt}')
+
         print(f"\n{stdout.read().decode()}", end="")
 
         userIn = input()
